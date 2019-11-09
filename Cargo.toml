@@ -1,0 +1,26 @@
+[package]
+name = "patroni-exporter"
+version = "0.1.0"
+authors = ["Cameron Daniel <cam.daniel@gmail.com>"]
+edition = "2018"
+
+[[bin]]
+name = "patroni_exporter"
+path = "src/main.rs"
+
+[dependencies]
+serde = "^1.0"
+serde_derive = "^1.0"
+serde_json = "^1.0"
+
+futures-util-preview = "^0.3.0-alpha.19"
+hyper = { version = "^0.13.0-alpha.4", features = ["unstable-stream"] }
+lazy_static = "^1.4"
+prometheus = "^0.7"
+sentry = { version = "^0.17", default-features = false, features = ["with_device_info", "with_rust_info", "with_debug_meta"] }
+structopt = "^0.3"
+tokio = "^0.2.0-alpha.6"
+tokio-net = { version = "^0.2.0-alpha.6", features = ["signal"] }
+tracing = "^0.1"
+tracing-subscriber = "^0.1"
+uuid = { version = "^0.8", features = ["serde"] }
