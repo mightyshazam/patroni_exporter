@@ -32,7 +32,7 @@ script:
 after_script: set +e
 
 before_deploy:
-  - cp target/$TARGET/release/trk $CRATE_NAME-$TRAVIS_TAG-$TARGET
+  - cp target/$TARGET/release/patroni_exporter $CRATE_NAME-$TRAVIS_TAG-$TARGET
 
 deploy:
   api_key:
