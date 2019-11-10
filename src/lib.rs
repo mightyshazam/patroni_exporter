@@ -12,14 +12,13 @@ use std::net::SocketAddr;
 use std::time::Duration;
 
 lazy_static! {
-    pub static ref GAUGE_PG_VERSION: GaugeVec = register_gauge_vec!("patroni_postgres_version", "PostgreSQL version", &["node"]).unwrap();
-    pub static ref GAUGE_PATRONI_VERSION: GaugeVec = register_gauge_vec!("patroni_version", "Patroni version", &["node", "version"]).unwrap();
-    pub static ref GAUGE_RUNNING: GaugeVec = register_gauge_vec!("patroni_running", "Is PostgreSQL running", &["node"]).unwrap();
-    pub static ref GAUGE_PENDING_RESTART: GaugeVec = register_gauge_vec!("patroni_pending_restart", "Node is pending a restart", &["node"]).unwrap();
+    pub static ref GAUGE_PG_VERSION: GaugeVec = register_gauge_vec!("patroni_postgres_version", "PostgreSQL version", &["server", "role"]).unwrap();
+    pub static ref GAUGE_PATRONI_VERSION: GaugeVec = register_gauge_vec!("patroni_version", "Patroni version", &["server", "role", "version"]).unwrap();
+    pub static ref GAUGE_RUNNING: GaugeVec = register_gauge_vec!("patroni_running", "Is PostgreSQL running", &["server", "role"]).unwrap();
+    pub static ref GAUGE_PENDING_RESTART: GaugeVec = register_gauge_vec!("patroni_pending_restart", "Node is pending a restart", &["server", "role"]).unwrap();
     
-    pub static ref GAUGE_TIMELINE: GaugeVec = register_gauge_vec!("patroni_timeline_number", "Patroni timeline number", &["node"]).unwrap();
-    pub static ref GAUGE_ROLE: GaugeVec = register_gauge_vec!("patroni_role", "Current role", &["node", "role"]).unwrap();
-    pub static ref GAUGE_REPL_SLOTS: GaugeVec = register_gauge_vec!("patroni_replication_slots", "Postgres replication slots connected", &["node"]).unwrap();
+    pub static ref GAUGE_TIMELINE: GaugeVec = register_gauge_vec!("patroni_timeline_number", "Patroni timeline number", &["server", "role"]).unwrap();
+    pub static ref GAUGE_REPL_SLOTS: GaugeVec = register_gauge_vec!("patroni_replication_slots", "Postgres replication slots connected", &["server", "role"]).unwrap();
 }
 
 /// Export Patroni metrics to Prometheus
@@ -82,25 +81,24 @@ pub async fn run() {
         tracing::debug!("Querying Consul");
         match consul.service(&args.service).await {
             Ok(patroni) => {
-                for (node, state) in &patroni {
+                for (server, state) in &patroni {
                     let is_running = match state.is_running() {
                         true => 1.0,
                         false => 0.0
                     };
-                    GAUGE_RUNNING.with_label_values(&[node]).set(is_running);
+                    GAUGE_RUNNING.with_label_values(&[server, &state.role()]).set(is_running);
 
                     let pending_restart = match state.pending_restart() {
                         true => 1.0,
                         false => 0.0
                     };
-                    GAUGE_PENDING_RESTART.with_label_values(&[node]).set(pending_restart);
+                    GAUGE_PENDING_RESTART.with_label_values(&[server, &state.role()]).set(pending_restart);
                     
-                    GAUGE_PG_VERSION.with_label_values(&[node]).set(state.postgres_version() as f64);
-                    GAUGE_PATRONI_VERSION.with_label_values(&[node, state.patroni_version()]).set(1.0);
+                    GAUGE_PG_VERSION.with_label_values(&[server, &state.role()]).set(state.postgres_version() as f64);
+                    GAUGE_PATRONI_VERSION.with_label_values(&[server, &state.role(), state.patroni_version()]).set(1.0);
                     
-                    GAUGE_TIMELINE.with_label_values(&[node]).set(state.timeline() as f64);
-                    GAUGE_ROLE.with_label_values(&[node, &state.role()]).set(1.0);
-                    GAUGE_REPL_SLOTS.with_label_values(&[node]).set(state.repl_slots() as f64);
+                    GAUGE_TIMELINE.with_label_values(&[server, &state.role()]).set(state.timeline() as f64);
+                    GAUGE_REPL_SLOTS.with_label_values(&[server, &state.role()]).set(state.repl_slots() as f64);
                 }
 
                 // Reset our error counter
