@@ -1,6 +1,6 @@
 [package]
 name = "patroni-exporter"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Cameron Daniel <cam.daniel@gmail.com>"]
 edition = "2018"
 
@@ -13,14 +13,12 @@ serde = "^1.0"
 serde_derive = "^1.0"
 serde_json = "^1.0"
 
-futures-util-preview = "^0.3.0-alpha.19"
-hyper = { version = "^0.13.0-alpha.4", features = ["unstable-stream"] }
+hyper = "^0.13"
 lazy_static = "^1.4"
-prometheus = "^0.7"
-sentry = { version = "^0.17", default-features = false, features = ["with_device_info", "with_rust_info", "with_debug_meta"] }
+prometheus = { version = "^0.9", features = ["process"] }
+sentry = { version = "^0.18", default-features = false, features = ["with_device_info", "with_rust_info", "with_debug_meta"] }
 structopt = "^0.3"
-tokio = "^0.2.0-alpha.6"
-tokio-net = { version = "^0.2.0-alpha.6", features = ["signal"] }
+tokio = { version = "^0.2.20", features = ["macros", "net", "rt-core", "signal", "time"] }
 tracing = "^0.1"
-tracing-subscriber = "^0.1"
+tracing-subscriber = "^0.2"
 uuid = { version = "^0.8", features = ["serde"] }

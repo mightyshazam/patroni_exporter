@@ -1,7 +1,6 @@
 use crate::patroni::PatroniStatus;
 
 use hyper::{Client, Uri};
-use futures_util::TryStreamExt;
 use serde_derive::Deserialize;
 use uuid::Uuid;
 
@@ -42,9 +41,10 @@ impl ConsulClient {
             let url = format!("{}v1/catalog/service/{}", self.url, service);
             tracing::debug!(%url, "fetching service data");
             let res = client.get( Uri::from_str(&url)? ).await?;
-            let bytes = res.into_body().try_concat().await?;
+            let body = hyper::body::to_bytes(res).await?;
+            // let bytes = res.into_body().await?;
 
-            serde_json::from_slice(&bytes)?
+            serde_json::from_slice(&body)?
         };
         tracing::trace!(?service);
 
@@ -61,7 +61,7 @@ impl ConsulClient {
                 }
             };
 
-            let bytes = match res.into_body().try_concat().await {
+            let bytes = match hyper::body::to_bytes(res).await {
                 Ok(bytes) => bytes,
                 Err(error) => {
                     tracing::error!(%error, node = %service.service_address, "error reading stream");

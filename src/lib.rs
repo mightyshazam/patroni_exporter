@@ -2,7 +2,6 @@ use hyper::Uri;
 use lazy_static::lazy_static;
 use prometheus::*;
 use structopt::StructOpt;
-use tracing_subscriber::filter::EnvFilter;
 
 mod consul;
 mod http;
@@ -51,15 +50,14 @@ pub async fn run() {
 
     // Init logging
     // Derive verbosity from args
-    let log_filter = match args.verbose {
-        0 => format!("warn,{}=info", module_path!()),
-        1 => format!("warn,{}=debug", module_path!()),
-        2 => format!("info,{}=trace", module_path!()),
-        _ => format!("debug,{}=trace", module_path!())
+    let log_level = match args.verbose {
+        0 => tracing::Level::INFO,
+        1 => tracing::Level::DEBUG,
+        _ => tracing::Level::TRACE
     };
 
     let subscriber = tracing_subscriber::FmtSubscriber::builder()
-        .with_env_filter(EnvFilter::new(log_filter))
+        .with_max_level(log_level)
         .finish();
 
     tracing::subscriber::set_global_default(subscriber)
@@ -116,6 +114,6 @@ pub async fn run() {
         };
 
         // Sleep for 10 secs
-        tokio::timer::delay_for(Duration::from_secs(30)).await;
+        tokio::time::delay_for(Duration::from_secs(30)).await;
     }
 }
