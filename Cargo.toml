@@ -1,8 +1,14 @@
 [package]
 name = "patroni-exporter"
+description = "Prometheus exporter for monitoring Patroni instances"
 version = "0.2.0"
 authors = ["Cameron Daniel <cam.daniel@gmail.com>"]
 edition = "2018"
+readme = "README.md"
+license = "MIT"
+keywords = ["patroni", "postgres", "postgresql", "consul", "prometheus"]
+repository = "https://github.com/ccakes/patroni_exporter"
+homepage = "https://github.com/ccakes/patroni_exporter"
 
 [[bin]]
 name = "patroni_exporter"
