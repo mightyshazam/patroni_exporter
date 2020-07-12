@@ -37,7 +37,7 @@ struct Args {
     service: String,
 
     /// HTTP listen address
-    #[structopt(short = "l", long = "listen")]
+    #[structopt(short = "l", long = "listen", default_value = "0.0.0.0:9393")]
     listen_addr: SocketAddr,
 
     /// Logging verbosity
