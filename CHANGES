@@ -1,5 +1,9 @@
 Revision history for patroni_exporter
 
+0.2.2
+    - Added missing "starting" state from PatroniState enum
+    - rustfmt
+
 0.1.1
     - Rename node label to server to avoid conflicting with Prom
     - Add role label to exported metrics

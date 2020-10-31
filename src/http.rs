@@ -1,17 +1,16 @@
-use hyper::{Body, Request, Response, Server, StatusCode};
 use hyper::service::{make_service_fn, service_fn};
+use hyper::{Body, Request, Response, Server, StatusCode};
 use prometheus::*;
 
 use std::net::SocketAddr;
 
 pub async fn listen(listen_addr: SocketAddr) {
-    let service = make_service_fn(|_| async {
-        Ok::<_, hyper::Error>(service_fn(request_handler))
-    });
+    let service = make_service_fn(|_| async { Ok::<_, hyper::Error>(service_fn(request_handler)) });
 
     tracing::info!(%listen_addr, "starting HTTP server");
     Server::bind(&listen_addr)
-        .serve(service).await
+        .serve(service)
+        .await
         .expect("Error starting HTTP server");
 }
 
@@ -30,8 +29,7 @@ async fn request_handler(req: Request<Body>) -> Result<Response<Body>> {
             String::from_utf8(buf)
                 .and_then(|metrics| Ok(Response::new(Body::from(metrics))))
                 .or_else(|_| Ok(Response::new(Body::from("# Error encoding metrics"))))
-
-        },
+        }
 
         _ => {
             let mut not_found = Response::default();

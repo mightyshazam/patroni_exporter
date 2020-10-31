@@ -1,7 +1,7 @@
 [package]
 name = "patroni-exporter"
 description = "Prometheus exporter for monitoring Patroni instances"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Cameron Daniel <cam.daniel@gmail.com>"]
 edition = "2018"
 readme = "README.md"

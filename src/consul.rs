@@ -15,9 +15,8 @@ struct ConsulService {
     node: String,
     datacenter: String,
     service_address: IpAddr,
-    service_port: u16
+    service_port: u16,
 }
-
 
 #[derive(Clone)]
 pub struct ConsulClient {
@@ -35,12 +34,15 @@ impl ConsulClient {
         }
     }
 
-    pub async fn service(&self, service: &str) -> Result<Vec<(String, PatroniStatus)>, Box<dyn std::error::Error>> {
+    pub async fn service(
+        &self,
+        service: &str,
+    ) -> Result<Vec<(String, PatroniStatus)>, Box<dyn std::error::Error>> {
         let client = Client::new();
         let services: Vec<ConsulService> = {
             let url = format!("{}v1/catalog/service/{}", self.url, service);
             tracing::debug!(%url, "fetching service data");
-            let res = client.get( Uri::from_str(&url)? ).await?;
+            let res = client.get(Uri::from_str(&url)?).await?;
             let body = hyper::body::to_bytes(res).await?;
             // let bytes = res.into_body().await?;
 
@@ -50,10 +52,13 @@ impl ConsulClient {
 
         let mut status = vec![];
         for service in &services {
-            let url = format!("http://{}:{}/", service.service_address, service.service_port);
+            let url = format!(
+                "http://{}:{}/",
+                service.service_address, service.service_port
+            );
             tracing::debug!(%url, "fetching patroni state");
 
-            let res = match client.get( Uri::from_str(&url)? ).await {
+            let res = match client.get(Uri::from_str(&url)?).await {
                 Ok(res) => res,
                 Err(error) => {
                     tracing::error!(%error, node = %service.service_address, "error fetching patroni state");
