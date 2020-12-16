@@ -14,7 +14,7 @@ patroni_exporter can be configured either by passing in arguments or by environm
 
 ```shell
 $ patroni_exporter -h
-patroni-exporter 0.2.1
+patroni-exporter 0.3.0
 Export Patroni metrics to Prometheus
 
 USAGE:
