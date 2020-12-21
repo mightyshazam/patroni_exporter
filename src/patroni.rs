@@ -3,6 +3,46 @@ use serde_json::Value;
 
 use std::collections::HashMap;
 use std::net::IpAddr;
+use std::pin::Pin;
+use std::future::Future;
+use std::task::{Context, Poll};
+
+pub type ExporterResult = Result<Vec<(String, PatroniStatus)>, Box<dyn std::error::Error>>;
+
+pub struct ExporterFuture {
+    inner: Pin<Box<dyn Future<Output = ExporterResult> + Send>>,
+}
+
+impl ExporterFuture {
+    pub fn new(fut: Box<dyn Future<Output = ExporterResult> + Send>) -> Self {
+        Self { inner: fut.into() }
+    }
+}
+
+/*
+impl fmt::Debug for ResponseFExporterFutureuture {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.pad("Future<Response>")
+    }
+}*/
+
+impl Future for ExporterFuture {
+    type Output = ExporterResult;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Pin::new(&mut self.inner).poll(cx)
+    }
+}
+
+pub trait Exporter {
+    fn name(&self) -> &'static str;
+    fn service(
+        &self,
+        service: & str,
+    ) -> ExporterFuture;
+}
+
+
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 enum PatroniState {

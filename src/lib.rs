@@ -4,12 +4,17 @@ use prometheus::*;
 use structopt::StructOpt;
 
 mod consul;
+mod etcd;
 mod http;
 mod patroni;
+mod patroni_local;
 
 use std::net::SocketAddr;
 use std::time::Duration;
+use patroni::Exporter;
 
+const METHOD_CONSUL: &str = "consul";
+const SERVICE_NONE: &str = "";
 lazy_static! {
     pub static ref GAUGE_PG_VERSION: GaugeVec = register_gauge_vec!(
         "patroni_postgres_version",
@@ -60,16 +65,16 @@ lazy_static! {
 #[structopt(name = "patroni_exporter")]
 struct Args {
     /// Consul URL
-    #[structopt(short = "c", long = "consul", env = "CONSUL_HTTP_ADDR")]
-    consul_url: Uri,
+    #[structopt(short = "c", long = "consul", env = "CONSUL_HTTP_ADDR", required_if("method", METHOD_CONSUL))]
+    consul_url: Option<Uri>,
 
     /// Consul token
     #[structopt(short = "t", long = "token", env = "CONSUL_HTTP_TOKEN")]
     consul_token: Option<String>,
 
     /// Patroni service name
-    #[structopt(short = "s", long = "service", env = "PATRONI_SERVICE")]
-    service: String,
+    #[structopt(short = "s", long = "service", env = "PATRONI_SERVICE", required_if("method", METHOD_CONSUL))]
+    service: Option<String>,
 
     /// HTTP listen address
     #[structopt(short = "l", long = "listen", default_value = "0.0.0.0:9393")]
@@ -78,6 +83,17 @@ struct Args {
     /// Logging verbosity
     #[structopt(short = "v", parse(from_occurrences))]
     verbose: u8,
+
+    // Local patroni endpoint
+    #[structopt(short = "p", long = "patroni", env = "PATRONI_HTTP_ADDR", default_value = "http://127.0.0.1:8008")]
+    local_addr: Uri,
+
+    // Method to use for getting metrics
+    #[structopt(short = "m", long = "method", env = "PATRONI_EXPORTER_METHOD")]
+    method: String,
+
+    #[structopt(short = "n", long = "name", env = "HOSTNAME")]
+    name: String,
 }
 
 pub async fn run() {
@@ -100,7 +116,10 @@ pub async fn run() {
     // Start HTTP server
     tokio::spawn(http::listen(args.listen_addr));
 
-    let consul = consul::ConsulClient::new(&args.consul_url, &args.consul_token);
+    let exporter: Box::<dyn Exporter> = match args.method.to_lowercase().trim() {
+        METHOD_CONSUL => Box::new(consul::ConsulClient::new(&args.consul_url.unwrap(), &args.consul_token)),
+        _ => Box::new(patroni_local::PatroniClient::new(&args.local_addr, args.name))
+    };
 
     // Keep track of Consul failures and bail after a few in a row
     let mut consul_fails = 0usize;
@@ -108,10 +127,16 @@ pub async fn run() {
     // Also keep track of the nodes we're monitoring as these could change
     // HashMap<$node, $missing>
 
+    let svc = match args.service {
+        Some(service) => service,
+        None => SERVICE_NONE.to_owned()
+    };
+
     tracing::info!("Starting monitoring");
     loop {
-        tracing::debug!("Querying Consul");
-        match consul.service(&args.service).await {
+        tracing::debug!("Querying Exporter");
+        let fut = exporter.service(&svc);
+        match fut.await {
             Ok(patroni) => {
                 // Ensure we have fresh state
                 GAUGE_ROLE.reset();
@@ -160,7 +185,7 @@ pub async fn run() {
                 consul_fails = 0;
             }
             Err(error) => {
-                tracing::error!(%error, "unable to query consul");
+                tracing::error!(%error, "unable to query service");
                 consul_fails += 1;
 
                 if consul_fails >= 5 {
