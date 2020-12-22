@@ -64,7 +64,6 @@ async fn service_async(
         serde_json::from_slice(&body)?
     };
     tracing::trace!(?service);
-
     let mut status = vec![];
     for service in &services {
         let url = format!(

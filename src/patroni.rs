@@ -101,10 +101,14 @@ pub struct PatroniStatus {
     pending_restart: bool,
     state: PatroniState,
     role: PatroniRole,
+    #[serde(default)]
     server_version: u32,
+    #[serde(default)]
     cluster_unlocked: bool,
+    #[serde(default)]
     timeline: u32,
     // lazy..
+    #[serde(default)]
     xlog: HashMap<String, Value>,
     #[serde(default)]
     replication: Vec<PatroniReplConn>,

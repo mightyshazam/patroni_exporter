@@ -28,3 +28,4 @@ tokio = { version = "^0.2.20", features = ["macros", "net", "rt-core", "signal",
 tracing = "^0.1"
 tracing-subscriber = "^0.2"
 uuid = { version = "^0.8", features = ["serde"] }
+base64 = "0.13.0"

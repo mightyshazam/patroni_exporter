@@ -14,6 +14,7 @@ use std::time::Duration;
 use patroni::Exporter;
 
 const METHOD_CONSUL: &str = "consul";
+const METHOD_ETCD: &str = "etcd";
 const SERVICE_NONE: &str = "";
 lazy_static! {
     pub static ref GAUGE_PG_VERSION: GaugeVec = register_gauge_vec!(
@@ -72,8 +73,12 @@ struct Args {
     #[structopt(short = "t", long = "token", env = "CONSUL_HTTP_TOKEN")]
     consul_token: Option<String>,
 
+    /// Etcd URL
+    #[structopt(short = "e", long = "etcd", env = "ETCD_HTTP_ADDR", required_if("method", METHOD_ETCD))]
+    etcd_url: Option<Uri>,
+
     /// Patroni service name
-    #[structopt(short = "s", long = "service", env = "PATRONI_SERVICE", required_if("method", METHOD_CONSUL))]
+    #[structopt(short = "s", long = "service", env = "PATRONI_SERVICE", required_if("method", METHOD_CONSUL), required_if("method", METHOD_ETCD))]
     service: Option<String>,
 
     /// HTTP listen address
@@ -118,6 +123,7 @@ pub async fn run() {
 
     let exporter: Box::<dyn Exporter> = match args.method.to_lowercase().trim() {
         METHOD_CONSUL => Box::new(consul::ConsulClient::new(&args.consul_url.unwrap(), &args.consul_token)),
+        METHOD_ETCD => Box::new(etcd::EtcdClient::new(&args.etcd_url.unwrap())),
         _ => Box::new(patroni_local::PatroniClient::new(&args.local_addr, args.name))
     };
 
